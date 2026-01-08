@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>방학계획표</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        body { 
+            font-family: "Pretendard", sans-serif;
+            background-color: #f8fafc;
+            min-height: 100vh;
+        }
+        .clock-shadow {
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06), inset 0 0 0 10px #ffffff;
+        }
+        /* 이모티콘 스타일: 크기를 줄이고 선명도 유지 */
+        .slice-emoji {
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        select, input { border: 2px solid #f1f5f9; border-radius: 12px !important; }
+        .emoji-btn {
+            font-size: 20px;
+            transition: all 0.2s;
+            background: white;
+            border: 2px solid #f1f5f9;
+        }
+        .emoji-btn.selected {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="pb-12 text-slate-700">
+    <div class="max-w-md mx-auto px-6">
+        <header class="text-center py-8">
+            <h1 class="text-2xl font-black text-slate-800 tracking-tight italic">⏰ 꼼꼼 방학 시계</h1>
+            <div class="w-10 h-1 bg-blue-500 mx-auto mt-1 rounded-full"></div>
+        </header>
+
+        <div class="bg-white rounded-[55px] clock-shadow p-4 mb-8 relative border-4 border-white">
+            <svg id="visualClock" viewBox="0 0 300 300" class="w-full h-full transform -rotate-90">
+                <circle cx="150" cy="150" r="148" fill="#fff" />
+                <g id="slicesGroup"></g>
+                <g id="labelsGroup"></g>
+                <circle cx="150" cy="150" r="3" fill="#cbd5e1"/>
+            </svg>
+            <div class="absolute inset-0 pointer-events-none text-[10px] text-slate-300 font-bold">
+                <span class="absolute top-6 left-1/2 -translate-x-1/2">24</span>
+                <span class="absolute bottom-6 left-1/2 -translate-x-1/2">12</span>
+                <span class="absolute right-6 top-1/2 -translate-y-1/2">06</span>
+                <span class="absolute left-6 top-1/2 -translate-y-1/2">18</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 mb-6 shadow-sm space-y-4">
+            <div>
+                <label class="text-[11px] font-bold text-slate-400 ml-1 mb-2 block">아이콘 선택</label>
+                <div class="grid grid-cols-6 gap-2" id="emojiGrid"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="ml-1 text-[10px] font-bold text-slate-400">시작</label>
+                    <div class="flex gap-1">
+                        <select id="startH" class="w-full p-2 bg-slate-50 outline-none text-sm"></select>
+                        <select id="startM" class="w-full p-2 bg-slate-50 outline-none text-sm"></select>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="ml-1 text-[10px] font-bold text-slate-400">종료</label>
+                    <div class="flex gap-1">
+                        <select id="endH" class="w-full p-2 bg-slate-50 outline-none text-sm"></select>
+                        <select id="endM" class="w-full p-2 bg-slate-50 outline-none text-sm"></select>
+                    </div>
+                </div>
+            </div>
+            
+            <input type="text" id="taskName" placeholder="활동 이름 입력" 
+                class="w-full p-3.5 bg-slate-50 text-base font-bold outline-none focus:bg-white focus:border-blue-400 transition-all">
+            
+            <button onclick="addSchedule()" class="w-full bg-blue-600 text-white py-3.5 rounded-xl text-lg font-bold shadow-blue-100 shadow-xl active:scale-95 transition-all">계획 추가하기</button>
+        </div>
+
+        <div id="scheduleList" class="space-y-2"></div>
+    </div>
+
+    <script>
+        const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍎", "🛌", "✏️"];
+        let selectedIcon = "🏫";
+        const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
+        let schedules = JSON.parse(localStorage.getItem('kidClock_emoji_v2') || '[]');
+
+        function init() {
+            setupSelects();
+            createEmojiGrid();
+            render();
+        }
+
+        function createEmojiGrid() {
+            const grid = document.getElementById('emojiGrid');
+            emojis.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.className = `emoji-btn w-full aspect-square flex items-center justify-center rounded-lg ${emoji === selectedIcon ? 'selected' : ''}`;
+                btn.textContent = emoji;
+                btn.onclick = () => {
+                    selectedIcon = emoji;
+                    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function setupSelects() {
+            const sh = document.getElementById('startH'), eh = document.getElementById('endH');
+            const sm = document.getElementById('startM'), em = document.getElementById('endM');
+            for(let i=0; i<24; i++) {
+                const opt = `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
+                sh.innerHTML += opt; eh.innerHTML += opt;
+            }
+            for(let i=0; i<60; i+=10) {
+                const opt = `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
+                sm.innerHTML += opt; em.innerHTML += opt;
+            }
+            eh.value = "1";
+        }
+
+        function polarToCartesian(cx, cy, r, angleDeg) {
+            const rad = (angleDeg * Math.PI) / 180.0;
+            return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+        }
+
+        function describeArc(x, y, radius, startAngle, endAngle) {
+            const start = polarToCartesian(x, y, radius, endAngle);
+            const end = polarToCartesian(x, y, radius, startAngle);
+            const largeArc = endAngle - startAngle <= 180 ? "0" : "1";
+            return ["M", start.x, start.y, "A", radius, radius, 0, largeArc, 0, end.x, end.y, "L", x, y, "Z"].join(" ");
+        }
+
+        function render() {
+            const group = document.getElementById('slicesGroup');
+            const labels = document.getElementById('labelsGroup');
+            const list = document.getElementById('scheduleList');
+            group.innerHTML = ''; labels.innerHTML = ''; list.innerHTML = '';
+
+            schedules.sort((a,b) => (parseInt(a.sh)*60+parseInt(a.sm)) - (parseInt(b.sh)*60+parseInt(b.sm))).forEach((item, index) => {
+                const startTotal = (parseInt(item.sh) * 60) + parseInt(item.sm);
+                const endTotal = (parseInt(item.eh) * 60) + parseInt(item.em);
+                const duration = endTotal - startTotal;
+                const startDeg = startTotal * 0.25;
+                const endDeg = endTotal * 0.25;
+                const midDeg = (startDeg + endDeg) / 2;
+
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", describeArc(150, 150, 145, startDeg, endDeg));
+                path.setAttribute("fill", item.color);
+                path.setAttribute("stroke", "white");
+                path.setAttribute("stroke-width", "1.5");
+                group.appendChild(path);
+
+                if (duration >= 15) {
+                    // 반지름 위치 조정 및 폰트 사이즈 대폭 축소 (기존 32px -> 20px 내외)
+                    const radius = 108; 
+                    const pos = polarToCartesian(150, 150, radius, midDeg);
+                    const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    textNode.setAttribute("x", pos.x);
+                    textNode.setAttribute("y", pos.y);
+                    textNode.setAttribute("class", "slice-emoji");
+
+                    // [수정] 이모티콘 사이즈 축소 로직
+                    let fontSize = 14; 
+                    textNode.style.fontSize = fontSize + "px";
+                    textNode.textContent = item.icon;
+
+                    let rotation = midDeg + 90;
+                    if (midDeg > 90 && midDeg < 270) rotation += 180;
+                    textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
+                    labels.appendChild(textNode);
+                }
+
+                const div = document.createElement('div');
+                div.className = "flex items-center p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50";
+                div.innerHTML = `
+                    <div class="w-10 h-10 flex items-center justify-center text-xl rounded-xl mr-3" style="background-color: ${item.color}">
+                        ${item.icon}
+                    </div>
+                    <div class="flex-1">
+                        <span class="text-[9px] font-bold text-slate-300 block mb-0.5">${String(item.sh).padStart(2,'0')}:${String(item.sm).padStart(2,'0')} - ${String(item.eh).padStart(2,'0')}:${String(item.em).padStart(2,'0')}</span>
+                        <h4 class="text-base text-slate-700 font-bold leading-tight">${item.task}</h4>
+                    </div>
+                    <button onclick="deleteItem(${index})" class="text-slate-300 hover:text-red-400 p-2">✕</button>
+                `;
+                list.appendChild(div);
+            });
+            localStorage.setItem('kidClock_emoji_v2', JSON.stringify(schedules));
+        }
+
+        function addSchedule() {
+            const task = document.getElementById('taskName').value.trim();
+            if (!task) return;
+            const startTotal = parseInt(document.getElementById('startH').value)*60 + parseInt(document.getElementById('startM').value);
+            const endTotal = parseInt(document.getElementById('endH').value)*60 + parseInt(document.getElementById('endM').value);
+            if (startTotal >= endTotal) return alert("시간을 확인해주세요!");
+            
+            schedules.push({ 
+                sh: document.getElementById('startH').value, 
+                sm: document.getElementById('startM').value, 
+                eh: document.getElementById('endH').value, 
+                em: document.getElementById('endM').value, 
+                task, icon: selectedIcon, color: colorPalette[schedules.length % colorPalette.length] 
+            });
+            document.getElementById('taskName').value = '';
+            render();
+        }
+
+        function deleteItem(index) { schedules.splice(index, 1); render(); }
+        init();
+    </script>
+</body>
+</html>
