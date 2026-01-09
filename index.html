@@ -38,7 +38,7 @@
 <body class="pb-12 text-slate-700">
     <div class="max-w-md mx-auto px-6">
         <header class="text-center py-8">
-            <h1 class="text-2xl font-black text-slate-800 tracking-tight italic">⏰ 꼼꼼 방학 시계</h1>
+            <h1 class="text-2xl font-black text-slate-800 tracking-tight italic">⏰ 꼼꼼 방학생활계획표</h1>
             <div class="w-10 h-1 bg-blue-500 mx-auto mt-1 rounded-full"></div>
         </header>
 
@@ -90,7 +90,7 @@
     </div>
 
     <script>
-        const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍎", "🛌", "✏️"];
+        const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
         let selectedIcon = "🏫";
         const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
         let schedules = JSON.parse(localStorage.getItem('kidClock_emoji_v2') || '[]');
@@ -222,4 +222,5 @@
         init();
     </script>
 </body>
+
 </html>
