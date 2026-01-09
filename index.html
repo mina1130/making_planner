@@ -2,42 +2,268 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>방학계획표</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>초1 방학 생활 계획표 만들기</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: "Pretendard", sans-serif; background-color: #f8fafc; min-height: 100vh; }
-        .clock-shadow { box-shadow: 0 10px 40px rgba(0,0,0,0.06), inset 0 0 0 10px #ffffff; }
-        /* dominant-baseline: middle; 은 한 줄일 때 기준선을 중앙에 둡니다. */
-        .slice-label { pointer-events: none; text-anchor: middle; dominant-baseline: middle; font-weight: 700; }
-        select, input { border: 2px solid #f1f5f9; border-radius: 12px !important; }
-        .emoji-btn { font-size: 20px; transition: all 0.2s; background: white; border: 2px solid #f1f5f9; }
-        .emoji-btn.selected { background-color: #eff6ff; border-color: #3b82f6; transform: translateY(-2px); }
+        body {
+            font-family: 'Gaegu', cursive;
+            background-color: #fefce8;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-area { border: none !important; padding: 0 !important; }
+            body { background-color: white !important; }
+        }
+        .time-slice {
+            transition: all 0.3s ease;
+        }
+        .time-slice:hover {
+            opacity: 0.8;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body class="pb-12 text-slate-700">
-    <div class="max-w-md mx-auto px-6">
-        <header class="text-center py-8">
-            <h1 class="text-2xl font-black text-slate-800 tracking-tight italic">⏰ 꼼꼼 방학생활계획표</h1>
-            <div class="w-10 h-1 bg-blue-500 mx-auto mt-1 rounded-full"></div>
+<body class="p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 no-print gap-4">
+            <h1 class="text-4xl font-bold text-yellow-800">🎈 초1 방학 생활 계획표</h1>
+            <button onclick="window.print()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 transition-all">
+                <span>인쇄하기 (A4)</span>
+            </button>
         </header>
 
-        <div class="bg-white rounded-[55px] clock-shadow p-4 mb-8 relative border-4 border-white">
-            <svg id="visualClock" viewBox="0 0 300 300" class="w-full h-full transform -rotate-90">
-                <circle cx="150" cy="150" r="148" fill="#fff" />
-                <g id="slicesGroup"></g>
-                <g id="labelsGroup"></g>
-                <circle cx="150" cy="150" r="3" fill="#cbd5e1"/>
-            </svg>
-            <div class="absolute inset-0 pointer-events-none text-[10px] text-slate-400 font-bold">
-                <span class="absolute top-6 left-1/2 -translate-x-1/2">24</span>
-                <span class="absolute bottom-6 left-1/2 -translate-x-1/2">12</span>
-                <span class="absolute right-6 top-1/2 -translate-y-1/2">06</span>
-                <span class="absolute left-6 top-1/2 -translate-y-1/2">18</span>
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Settings Panel (Left) -->
+            <div class="lg:w-1/3 space-y-6 no-print">
+                <div class="bg-white p-6 rounded-2xl shadow-md border-4 border-yellow-200">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-700">✏️ 계획 짜기</h2>
+                    
+                    <div class="mb-4">
+                        <label class="block font-bold text-gray-600 mb-1">어린이 이름</label>
+                        <input type="text" id="studentName" oninput="updateView()" placeholder="이름을 적어주세요" class="w-full p-2 border-2 rounded-lg outline-none focus:border-yellow-400 text-xl">
+                    </div>
+
+                    <div class="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-100 mb-4">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <input type="time" id="startTime" value="09:00" class="p-1 border rounded">
+                            <input type="time" id="endTime" value="10:00" class="p-1 border rounded">
+                        </div>
+                        <input type="text" id="activityName" placeholder="할 일 (예: 독서)" class="w-full p-2 border rounded mb-2 text-lg">
+                        <div id="colorPicker" class="flex gap-1 mb-3 flex-wrap">
+                            <!-- Colors injected by JS -->
+                        </div>
+                        <button onclick="addActivity()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-3 rounded-lg shadow-sm text-lg">
+                            추가하기
+                        </button>
+                    </div>
+
+                    <div id="activityList" class="space-y-2 max-h-64 overflow-y-auto pt-2 border-t">
+                        <!-- List items injected by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Panel (Right) -->
+            <div class="flex-1 bg-white p-10 rounded-2xl shadow-xl print-area">
+                <div class="flex flex-col items-center">
+                    <div class="text-center mb-8">
+                        <span class="bg-yellow-100 text-3xl font-bold px-8 py-2 rounded-full border-2 border-yellow-300 text-yellow-900">
+                            방학 생활 계획표
+                        </span>
+                        <div class="mt-6 text-right w-full">
+                            <span id="displayName" class="text-2xl font-bold border-b-2 border-gray-400 px-4 pb-1">1학년 (이름)</span>
+                        </div>
+                    </div>
+
+                    <!-- Circular Chart -->
+                    <div class="relative w-[500px] h-[500px]">
+                        <svg id="scheduleSvg" viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                            <circle cx="50" cy="50" r="50" fill="#fff" stroke="#eee" stroke-width="0.5" />
+                            <g id="slicesGroup"></g>
+                            <g id="labelsGroup"></g>
+                            <!-- Center circle -->
+                            <circle cx="50" cy="50" r="12" fill="white" />
+                            <text x="50" y="49" text-anchor="middle" font-size="2.5" font-weight="bold" fill="#999">알찬 방학</text>
+                            <text x="50" y="53" text-anchor="middle" font-size="2.5" font-weight="bold" fill="#999">신나는 하루</text>
+                            <!-- Hour markers -->
+                            <g id="markersGroup"></g>
+                        </svg>
+                    </div>
+
+                    <!-- Goals Section -->
+                    <div class="w-full mt-10 p-6 border-4 border-yellow-100 rounded-3xl bg-yellow-50/30">
+                        <h3 class="text-2xl font-bold text-yellow-800 mb-4">🤙 나의 방학 약속</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-yellow-400 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</span>
+                                <input type="text" placeholder="약속을 적어보세요" class="flex-1 bg-transparent border-b-2 border-dashed border-gray-300 outline-none text-xl py-1">
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="bg-yellow-400 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</span>
+                                <input type="text" placeholder="약속을 적어보세요" class="flex-1 bg-transparent border-b-2 border-dashed border-gray-300 outline-none text-xl py-1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="bg-white rounded-3xl p-6 mb-6 shadow-sm space-y-4">
-            <div>
-                <label class="text-[11px] font-bold text-slate-400 ml-1 mb-2
+    <script>
+        const colors = ['#FEE2E2', '#FFEDD5', '#FEF3C7', '#DCFCE7', '#DBEAFE', '#E0E7FF', '#F3E8FF', '#FCE7F3'];
+        let selectedColor = colors[3];
+        let activities = [
+            { id: 1, name: '꿈나라 여행', start: '22:00', end: '07:30', color: '#E0E7FF' },
+            { id: 2, name: '아침 식사', start: '07:30', end: '09:00', color: '#FFEDD5' },
+            { id: 3, name: '자유 시간', start: '09:00', end: '13:00', color: '#DCFCE7' }
+        ];
+
+        function init() {
+            renderColorPicker();
+            drawMarkers();
+            updateView();
+        }
+
+        function renderColorPicker() {
+            const picker = document.getElementById('colorPicker');
+            picker.innerHTML = colors.map(c => `
+                <div onclick="selectColor('${c}')" 
+                     class="w-8 h-8 rounded-full cursor-pointer border-2 transition-all ${selectedColor === c ? 'border-gray-600 scale-110' : 'border-transparent'}"
+                     style="background-color: ${c}"></div>
+            `).join('');
+        }
+
+        function selectColor(c) {
+            selectedColor = c;
+            renderColorPicker();
+        }
+
+        function timeToMinutes(timeStr) {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function addActivity() {
+            const name = document.getElementById('activityName').value;
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
+            if (!name) return;
+            
+            activities.push({ id: Date.now(), name, start, end, color: selectedColor });
+            document.getElementById('activityName').value = '';
+            updateView();
+        }
+
+        function removeActivity(id) {
+            activities = activities.filter(a => a.id !== id);
+            updateView();
+        }
+
+        function updateView() {
+            const nameInput = document.getElementById('studentName').value;
+            document.getElementById('displayName').innerText = `1학년 ${nameInput || '(이름)'}`;
+            
+            renderSlices();
+            renderList();
+        }
+
+        function renderSlices() {
+            const slicesGroup = document.getElementById('slicesGroup');
+            const labelsGroup = document.getElementById('labelsGroup');
+            slicesGroup.innerHTML = '';
+            labelsGroup.innerHTML = '';
+
+            activities.forEach(item => {
+                let sMin = timeToMinutes(item.start);
+                let eMin = timeToMinutes(item.end);
+                if (eMin < sMin) eMin += 1440;
+
+                const startAngle = (sMin / 1440) * 360 - 90;
+                const endAngle = (eMin / 1440) * 360 - 90;
+
+                const x1 = 50 + 50 * Math.cos(Math.PI * startAngle / 180);
+                const y1 = 50 + 50 * Math.sin(Math.PI * startAngle / 180);
+                const x2 = 50 + 50 * Math.cos(Math.PI * endAngle / 180);
+                const y2 = 50 + 50 * Math.sin(Math.PI * endAngle / 180);
+
+                const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+                const pathData = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArc} 1 ${x2} ${y2} Z`;
+
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", pathData);
+                path.setAttribute("fill", item.color);
+                path.setAttribute("stroke", "white");
+                path.setAttribute("stroke-width", "0.2");
+                path.classList.add("time-slice");
+                slicesGroup.appendChild(path);
+
+                // Label
+                const midAngle = (startAngle + endAngle) / 2;
+                const lx = 50 + 35 * Math.cos(Math.PI * midAngle / 180);
+                const ly = 50 + 35 * Math.sin(Math.PI * midAngle / 180);
+                
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", lx);
+                text.setAttribute("y", ly);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("dominant-baseline", "middle");
+                text.setAttribute("font-size", "3.5");
+                text.setAttribute("font-weight", "bold");
+                text.setAttribute("fill", "#444");
+                text.textContent = item.name;
+                labelsGroup.appendChild(text);
+            });
+        }
+
+        function renderList() {
+            const list = document.getElementById('activityList');
+            const sorted = [...activities].sort((a,b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+            list.innerHTML = sorted.map(item => `
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded border group">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full" style="background-color: ${item.color}"></div>
+                        <span class="text-sm font-bold text-gray-700">${item.start} - ${item.name}</span>
+                    </div>
+                    <button onclick="removeActivity(${item.id})" class="text-red-300 hover:text-red-500">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function drawMarkers() {
+            const group = document.getElementById('markersGroup');
+            for (let i = 0; i < 24; i++) {
+                const angle = (i / 24) * 360 - 90;
+                const x1 = 50 + 47 * Math.cos(Math.PI * angle / 180);
+                const y1 = 50 + 47 * Math.sin(Math.PI * angle / 180);
+                const x2 = 50 + 50 * Math.cos(Math.PI * angle / 180);
+                const y2 = 50 + 50 * Math.sin(Math.PI * angle / 180);
+                
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+                line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+                line.setAttribute("stroke", "#ccc");
+                line.setAttribute("stroke-width", i % 6 === 0 ? "0.5" : "0.2");
+                group.appendChild(line);
+
+                if (i % 3 === 0) {
+                    const tx = 50 + 43 * Math.cos(Math.PI * angle / 180);
+                    const ty = 50 + 43 * Math.sin(Math.PI * angle / 180);
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", tx); text.setAttribute("y", ty);
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.setAttribute("font-size", "3");
+                    text.setAttribute("fill", "#bbb");
+                    text.textContent = i === 0 ? 24 : i;
+                    group.appendChild(text);
+                }
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
