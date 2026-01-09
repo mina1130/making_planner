@@ -79,7 +79,7 @@
         const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
         let selectedIcon = "🏫";
         const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
-        let schedules = JSON.parse(localStorage.getItem('kidClock_v9') || '[]');
+        let schedules = JSON.parse(localStorage.getItem('kidClock_v6') || '[]');
 
         function init() {
             setupSelects();
@@ -141,7 +141,6 @@
                 const midDeg = (startDeg + endDeg) / 2;
                 const duration = item.endTotal - item.startTotal;
 
-                // 1. 조각 그리기
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 path.setAttribute("d", describeArc(150, 150, 145, startDeg, endDeg));
                 path.setAttribute("fill", item.color);
@@ -149,9 +148,8 @@
                 path.setAttribute("stroke-width", "1.5");
                 group.appendChild(path);
 
-                // 2. 텍스트 레이블 (중심으로부터의 거리 radius 최적화)
-                if (duration >= 10) {
-                    const radius = 90; // 글자가 부채꼴 중앙에 오도록 반지름 조절
+                if (duration >= 20) {
+                    const radius = 100; 
                     const pos = polarToCartesian(150, 150, radius, midDeg);
                     const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     
@@ -161,17 +159,23 @@
                     textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
                     textNode.setAttribute("class", "slice-label");
 
-                    // [핵심] 줄바꿈 처리: tspan을 사용하여 아이콘과 텍스트 분리
-                    // dy 값을 조절하여 위아래 간격 확보
-                    textNode.innerHTML = `
-                        <tspan x="${pos.x}" dy="-0.4em" style="font-size: 14px;">${item.icon}</tspan>
-                        <tspan x="${pos.x}" dy="1.4em" style="font-size: 10px;">${item.task}</tspan>
-                    `;
-                    
+                    // 60분 이상이거나 활동명이 3자 이하로 짧으면 줄바꿈 표시
+                    if (duration >= 60 || (duration >= 30 && item.task.length <= 4)) {
+                        textNode.style.fontSize = "10px";
+                        // tspan의 x좌표를 부모 text의 x좌표와 동일하게 맞춰야 중앙 정렬됩니다.
+                        textNode.innerHTML = `
+                            <tspan x="${pos.x}" dy="-0.6em">${item.icon}</tspan>
+                            <tspan x="${pos.x}" dy="1.2em">${item.task}</tspan>
+                        `;
+                    } else {
+                        textNode.setAttribute("x", pos.x);
+                        textNode.setAttribute("y", pos.y);
+                        textNode.style.fontSize = "16px";
+                        textNode.textContent = item.icon;
+                    }
                     labels.appendChild(textNode);
                 }
 
-                // 3. 리스트 아이템
                 const div = document.createElement('div');
                 div.className = "flex items-center p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50";
                 div.innerHTML = `
@@ -188,7 +192,7 @@
                 `;
                 list.appendChild(div);
             });
-            localStorage.setItem('kidClock_v9', JSON.stringify(schedules));
+            localStorage.setItem('kidClock_v6', JSON.stringify(schedules));
         }
 
         function addSchedule() {
