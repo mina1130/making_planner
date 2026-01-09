@@ -15,7 +15,6 @@
         .clock-shadow {
             box-shadow: 0 10px 40px rgba(0,0,0,0.06), inset 0 0 0 10px #ffffff;
         }
-        /* 이모티콘 스타일: 크기를 줄이고 선명도 유지 */
         .slice-emoji {
             pointer-events: none;
             text-anchor: middle;
@@ -93,7 +92,7 @@
         const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
         let selectedIcon = "🏫";
         const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
-        let schedules = JSON.parse(localStorage.getItem('kidClock_emoji_v2') || '[]');
+        let schedules = JSON.parse(localStorage.getItem('kidClock_emoji_v3') || '[]');
 
         function init() {
             setupSelects();
@@ -138,7 +137,9 @@
         function describeArc(x, y, radius, startAngle, endAngle) {
             const start = polarToCartesian(x, y, radius, endAngle);
             const end = polarToCartesian(x, y, radius, startAngle);
-            const largeArc = endAngle - startAngle <= 180 ? "0" : "1";
+            const diff = endAngle - startAngle;
+            // 360도를 넘어가는 경우 처리
+            const largeArc = diff <= 180 ? "0" : "1";
             return ["M", start.x, start.y, "A", radius, radius, 0, largeArc, 0, end.x, end.y, "L", x, y, "Z"].join(" ");
         }
 
@@ -148,14 +149,13 @@
             const list = document.getElementById('scheduleList');
             group.innerHTML = ''; labels.innerHTML = ''; list.innerHTML = '';
 
-            schedules.sort((a,b) => (parseInt(a.sh)*60+parseInt(a.sm)) - (parseInt(b.sh)*60+parseInt(b.sm))).forEach((item, index) => {
-                const startTotal = (parseInt(item.sh) * 60) + parseInt(item.sm);
-                const endTotal = (parseInt(item.eh) * 60) + parseInt(item.em);
-                const duration = endTotal - startTotal;
-                const startDeg = startTotal * 0.25;
-                const endDeg = endTotal * 0.25;
+            // 시작 시간을 기준으로 정렬 (자정 너머가는 시간은 입력 시 처리됨)
+            schedules.sort((a,b) => a.startTotal - b.startTotal).forEach((item, index) => {
+                const startDeg = item.startTotal * 0.25;
+                const endDeg = item.endTotal * 0.25;
                 const midDeg = (startDeg + endDeg) / 2;
 
+                // 시계 원호 그리기
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 path.setAttribute("d", describeArc(150, 150, 145, startDeg, endDeg));
                 path.setAttribute("fill", item.color);
@@ -163,18 +163,15 @@
                 path.setAttribute("stroke-width", "1.5");
                 group.appendChild(path);
 
-                if (duration >= 15) {
-                    // 반지름 위치 조정 및 폰트 사이즈 대폭 축소 (기존 32px -> 20px 내외)
+                // 이모티콘 표시
+                if ((item.endTotal - item.startTotal) >= 15) {
                     const radius = 108; 
                     const pos = polarToCartesian(150, 150, radius, midDeg);
                     const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     textNode.setAttribute("x", pos.x);
                     textNode.setAttribute("y", pos.y);
                     textNode.setAttribute("class", "slice-emoji");
-
-                    // [수정] 이모티콘 사이즈 축소 로직
-                    let fontSize = 14; 
-                    textNode.style.fontSize = fontSize + "px";
+                    textNode.style.fontSize = "14px";
                     textNode.textContent = item.icon;
 
                     let rotation = midDeg + 90;
@@ -183,37 +180,55 @@
                     labels.appendChild(textNode);
                 }
 
+                // 하단 리스트 표시
                 const div = document.createElement('div');
                 div.className = "flex items-center p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50";
+                const timeText = `${String(item.sh).padStart(2,'0')}:${String(item.sm).padStart(2,'0')} - ${String(item.eh).padStart(2,'0')}:${String(item.em).padStart(2,'0')}`;
                 div.innerHTML = `
                     <div class="w-10 h-10 flex items-center justify-center text-xl rounded-xl mr-3" style="background-color: ${item.color}">
                         ${item.icon}
                     </div>
                     <div class="flex-1">
-                        <span class="text-[9px] font-bold text-slate-300 block mb-0.5">${String(item.sh).padStart(2,'0')}:${String(item.sm).padStart(2,'0')} - ${String(item.eh).padStart(2,'0')}:${String(item.em).padStart(2,'0')}</span>
+                        <span class="text-[9px] font-bold text-slate-300 block mb-0.5">${timeText}</span>
                         <h4 class="text-base text-slate-700 font-bold leading-tight">${item.task}</h4>
                     </div>
                     <button onclick="deleteItem(${index})" class="text-slate-300 hover:text-red-400 p-2">✕</button>
                 `;
                 list.appendChild(div);
             });
-            localStorage.setItem('kidClock_emoji_v2', JSON.stringify(schedules));
+            localStorage.setItem('kidClock_emoji_v3', JSON.stringify(schedules));
         }
 
         function addSchedule() {
             const task = document.getElementById('taskName').value.trim();
             if (!task) return;
-            const startTotal = parseInt(document.getElementById('startH').value)*60 + parseInt(document.getElementById('startM').value);
-            const endTotal = parseInt(document.getElementById('endH').value)*60 + parseInt(document.getElementById('endM').value);
-            if (startTotal >= endTotal) return alert("시간을 확인해주세요!");
+
+            const sh = document.getElementById('startH').value;
+            const sm = document.getElementById('startM').value;
+            const eh = document.getElementById('endH').value;
+            const em = document.getElementById('endM').value;
+
+            const startTotal = parseInt(sh) * 60 + parseInt(sm);
+            let endTotal = parseInt(eh) * 60 + parseInt(em);
+
+            // [수정 포인트] 종료 시간이 시작 시간보다 작거나 같으면 다음날로 간주 (+24시간)
+            if (endTotal <= startTotal) {
+                endTotal += 1440; 
+            }
             
+            // 만약 24시간을 초과하는 계획(예: 30시간짜리 계획)을 방지하려면 아래 조건 추가
+            if (endTotal - startTotal > 1440) {
+                return alert("계획은 24시간을 넘길 수 없습니다!");
+            }
+
             schedules.push({ 
-                sh: document.getElementById('startH').value, 
-                sm: document.getElementById('startM').value, 
-                eh: document.getElementById('endH').value, 
-                em: document.getElementById('endM').value, 
-                task, icon: selectedIcon, color: colorPalette[schedules.length % colorPalette.length] 
+                sh, sm, eh, em, 
+                startTotal, 
+                endTotal,
+                task, icon: selectedIcon, 
+                color: colorPalette[schedules.length % colorPalette.length] 
             });
+
             document.getElementById('taskName').value = '';
             render();
         }
@@ -222,5 +237,4 @@
         init();
     </script>
 </body>
-
 </html>
