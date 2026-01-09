@@ -79,7 +79,7 @@
         const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
         let selectedIcon = "🏫";
         const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
-        let schedules = JSON.parse(localStorage.getItem('kidClock_v6') || '[]');
+        let schedules = JSON.parse(localStorage.getItem('kidClock_v7') || '[]');
 
         function init() {
             setupSelects();
@@ -148,8 +148,8 @@
                 path.setAttribute("stroke-width", "1.5");
                 group.appendChild(path);
 
-                if (duration >= 20) {
-                    const radius = 100; 
+                if (duration >= 15) {
+                    const radius = 105; 
                     const pos = polarToCartesian(150, 150, radius, midDeg);
                     const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     
@@ -159,10 +159,15 @@
                     textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
                     textNode.setAttribute("class", "slice-label");
 
-                    // 60분 이상이거나 활동명이 3자 이하로 짧으면 줄바꿈 표시
-                    if (duration >= 60 || (duration >= 30 && item.task.length <= 4)) {
+                    // [수정 핵심] 너비 체크 로직
+                    // 1분당 약 0.25도의 공간이 생깁니다. 
+                    // 글자당 필요한 '각도 너비'를 대략적으로 계산하여 비교합니다.
+                    const charCount = item.task.length;
+                    const availableWidthAngle = duration * 0.25; // 칸이 가진 각도 너비
+                    const requiredWidthAngle = charCount * 4.5;  // 글자당 필요한 각도 (약 4.5도 기준)
+
+                    if (duration >= 40 && availableWidthAngle > requiredWidthAngle) {
                         textNode.style.fontSize = "10px";
-                        // tspan의 x좌표를 부모 text의 x좌표와 동일하게 맞춰야 중앙 정렬됩니다.
                         textNode.innerHTML = `
                             <tspan x="${pos.x}" dy="-0.6em">${item.icon}</tspan>
                             <tspan x="${pos.x}" dy="1.2em">${item.task}</tspan>
@@ -192,7 +197,7 @@
                 `;
                 list.appendChild(div);
             });
-            localStorage.setItem('kidClock_v6', JSON.stringify(schedules));
+            localStorage.setItem('kidClock_v7', JSON.stringify(schedules));
         }
 
         function addSchedule() {
