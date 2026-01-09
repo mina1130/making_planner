@@ -29,7 +29,7 @@
                 <g id="labelsGroup"></g>
                 <circle cx="150" cy="150" r="3" fill="#cbd5e1"/>
             </svg>
-            <div class="absolute inset-0 pointer-events-none text-[10px] text-slate-300 font-bold">
+            <div class="absolute inset-0 pointer-events-none text-[10px] text-slate-400 font-bold">
                 <span class="absolute top-6 left-1/2 -translate-x-1/2">24</span>
                 <span class="absolute bottom-6 left-1/2 -translate-x-1/2">12</span>
                 <span class="absolute right-6 top-1/2 -translate-y-1/2">06</span>
@@ -131,81 +131,4 @@
 
             schedules.sort((a,b) => a.startTotal - b.startTotal).forEach((item, index) => {
                 const startDeg = item.startTotal * 0.25;
-                const endDeg = item.endTotal * 0.25;
-                const midDeg = (startDeg + endDeg) / 2;
-                const duration = item.endTotal - item.startTotal;
-
-                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                path.setAttribute("d", describeArc(150, 150, 145, startDeg, endDeg));
-                path.setAttribute("fill", item.color);
-                path.setAttribute("stroke", "white");
-                path.setAttribute("stroke-width", "1.5");
-                group.appendChild(path);
-
-                if (duration >= 15) {
-                    const radius = 95; 
-                    const pos = polarToCartesian(150, 150, radius, midDeg);
-                    const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                    
-                    let rotation = midDeg + 90;
-                    if (midDeg > 90 && midDeg < 270) rotation += 180;
-                    
-                    textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
-                    textNode.setAttribute("class", "slice-label text-slate-800");
-
-                    // 텍스트가 너비를 넘지 않을 때만 이름 표시 (너비 체크 기준 완화)
-                    const canShowText = duration >= (item.task.length * 8 + 20);
-
-                    if (canShowText) {
-                        textNode.innerHTML = `
-                            <tspan x="${pos.x}" dy="-0.5em" style="font-size: 14px;">${item.icon}</tspan>
-                            <tspan x="${pos.x}" dy="1.4em" style="font-size: 9px; font-weight: 800;">${item.task}</tspan>
-                        `;
-                    } else {
-                        textNode.setAttribute("x", pos.x);
-                        textNode.setAttribute("y", pos.y);
-                        textNode.style.fontSize = "16px";
-                        textNode.textContent = item.icon;
-                    }
-                    labels.appendChild(textNode);
-                }
-
-                const div = document.createElement('div');
-                div.className = "flex items-center p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50";
-                div.innerHTML = `
-                    <div class="w-10 h-10 flex items-center justify-center text-xl rounded-xl mr-3" style="background-color: ${item.color}">
-                        ${item.icon}
-                    </div>
-                    <div class="flex-1">
-                        <span class="text-[9px] font-bold text-slate-300 block mb-0.5">
-                            ${String(item.sh).padStart(2,'0')}:${String(item.sm).padStart(2,'0')} - ${String(item.eh).padStart(2,'0')}:${String(item.em).padStart(2,'0')}
-                        </span>
-                        <h4 class="text-base text-slate-700 font-bold leading-tight">${item.task}</h4>
-                    </div>
-                    <button onclick="deleteItem(${index})" class="text-slate-300 hover:text-red-400 p-2">✕</button>
-                `;
-                list.appendChild(div);
-            });
-            localStorage.setItem('kidClock_final_v1', JSON.stringify(schedules));
-        }
-
-        function addSchedule() {
-            const task = document.getElementById('taskName').value.trim();
-            if (!task) return;
-            const sh = document.getElementById('startH').value;
-            const sm = document.getElementById('startM').value;
-            const eh = document.getElementById('endH').value;
-            const em = document.getElementById('endM').value;
-            let startTotal = parseInt(sh) * 60 + parseInt(sm);
-            let endTotal = parseInt(eh) * 60 + parseInt(em);
-            if (endTotal <= startTotal) endTotal += 1440; 
-            schedules.push({ sh, sm, eh, em, startTotal, endTotal, task, icon: selectedIcon, color: colorPalette[schedules.length % colorPalette.length] });
-            document.getElementById('taskName').value = '';
-            render();
-        }
-
-        function deleteItem(index) { schedules.splice(index, 1); render(); }
-        init();
-    </script>
-</body>
-</html>
+                const endDeg = item.endTotal * 0.
