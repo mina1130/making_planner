@@ -9,14 +9,12 @@
     <style>
         body { font-family: "Pretendard", sans-serif; background-color: #f8fafc; min-height: 100vh; }
         .clock-shadow { box-shadow: 0 10px 40px rgba(0,0,0,0.06), inset 0 0 0 10px #ffffff; }
-        /* 글자 스타일: 위치를 정확히 잡기 위해 세팅 */
         .slice-label { 
             pointer-events: none; 
             text-anchor: middle; 
             dominant-baseline: middle; 
             font-weight: 800;
             fill: #1e293b;
-            z-index: 50;
         }
         select, input { border: 2px solid #f1f5f9; border-radius: 12px !important; }
         .emoji-btn { font-size: 20px; transition: all 0.2s; background: white; border: 2px solid #f1f5f9; }
@@ -81,7 +79,7 @@
         const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
         let selectedIcon = "🏫";
         const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
-        let schedules = JSON.parse(localStorage.getItem('kidClock_v8') || '[]');
+        let schedules = JSON.parse(localStorage.getItem('kidClock_v9') || '[]');
 
         function init() {
             setupSelects();
@@ -151,9 +149,9 @@
                 path.setAttribute("stroke-width", "1.5");
                 group.appendChild(path);
 
-                // 2. 텍스트 레이블 (15분 이상일 때)
-                if (duration >= 15) {
-                    const radius = 95; 
+                // 2. 텍스트 레이블 (중심으로부터의 거리 radius 최적화)
+                if (duration >= 10) {
+                    const radius = 90; // 글자가 부채꼴 중앙에 오도록 반지름 조절
                     const pos = polarToCartesian(150, 150, radius, midDeg);
                     const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     
@@ -163,22 +161,13 @@
                     textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
                     textNode.setAttribute("class", "slice-label");
 
-                    // 너비 판정 완화: (지속 시간 분) * 0.25 가 (글자수 * 5) 보다 크면 텍스트 표시
-                    const canShowText = duration * 0.25 > (item.task.length * 5);
-
-                    if (duration >= 40 && canShowText) {
-                        textNode.style.fontSize = "10px";
-                        textNode.innerHTML = `
-                            <tspan x="${pos.x}" dy="-0.6em">${item.icon}</tspan>
-                            <tspan x="${pos.x}" dy="1.2em">${item.task}</tspan>
-                        `;
-                    } else {
-                        // 텍스트를 숨길 때는 이모티콘만 크게
-                        textNode.setAttribute("x", pos.x);
-                        textNode.setAttribute("y", pos.y);
-                        textNode.style.fontSize = "16px";
-                        textNode.textContent = item.icon;
-                    }
+                    // [핵심] 줄바꿈 처리: tspan을 사용하여 아이콘과 텍스트 분리
+                    // dy 값을 조절하여 위아래 간격 확보
+                    textNode.innerHTML = `
+                        <tspan x="${pos.x}" dy="-0.4em" style="font-size: 14px;">${item.icon}</tspan>
+                        <tspan x="${pos.x}" dy="1.4em" style="font-size: 10px;">${item.task}</tspan>
+                    `;
+                    
                     labels.appendChild(textNode);
                 }
 
@@ -199,7 +188,7 @@
                 `;
                 list.appendChild(div);
             });
-            localStorage.setItem('kidClock_v8', JSON.stringify(schedules));
+            localStorage.setItem('kidClock_v9', JSON.stringify(schedules));
         }
 
         function addSchedule() {
