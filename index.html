@@ -9,13 +9,12 @@
     <style>
         body { font-family: "Pretendard", sans-serif; background-color: #f8fafc; min-height: 100vh; }
         .clock-shadow { box-shadow: 0 10px 40px rgba(0,0,0,0.06), inset 0 0 0 10px #ffffff; }
-        /* 글자가 시계 바깥으로 나가지 않게 조절 */
         .slice-label { 
             pointer-events: none; 
             text-anchor: middle; 
-            dominant-baseline: central; 
+            dominant-baseline: middle; 
             font-weight: 800;
-            fill: #334155; /* 진한 슬레이트 색상 */
+            fill: #1e293b;
         }
         select, input { border: 2px solid #f1f5f9; border-radius: 12px !important; }
         .emoji-btn { font-size: 20px; transition: all 0.2s; background: white; border: 2px solid #f1f5f9; }
@@ -80,7 +79,7 @@
         const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
         let selectedIcon = "🏫";
         const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
-        let schedules = JSON.parse(localStorage.getItem('kidClock_emoji_v5') || '[]');
+        let schedules = JSON.parse(localStorage.getItem('kidClock_v6') || '[]');
 
         function init() {
             setupSelects();
@@ -142,7 +141,6 @@
                 const midDeg = (startDeg + endDeg) / 2;
                 const duration = item.endTotal - item.startTotal;
 
-                // 시계 조각
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 path.setAttribute("d", describeArc(150, 150, 145, startDeg, endDeg));
                 path.setAttribute("fill", item.color);
@@ -150,34 +148,34 @@
                 path.setAttribute("stroke-width", "1.5");
                 group.appendChild(path);
 
-                // 텍스트 표시 로직 보완
-                if (duration >= 20) { // 최소 20분 이상일 때만 표시
-                    const radius = 100; // 중심에서 조금 더 안쪽으로 배치
+                if (duration >= 20) {
+                    const radius = 100; 
                     const pos = polarToCartesian(150, 150, radius, midDeg);
                     const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                    textNode.setAttribute("x", pos.x);
-                    textNode.setAttribute("y", pos.y);
-                    textNode.setAttribute("class", "slice-label");
                     
-                    // 각도 보정 (항상 읽기 편하게)
                     let rotation = midDeg + 90;
                     if (midDeg > 90 && midDeg < 270) rotation += 180;
+                    
                     textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
+                    textNode.setAttribute("class", "slice-label");
 
-                    // [수정] 글자 표시 조건 완화
-                    // 60분 이상이거나 활동명이 아주 짧으면 이름 표시
-                    if (duration >= 60 || (duration >= 30 && item.task.length <= 3)) {
-                        textNode.style.fontSize = "11px";
-                        textNode.innerHTML = `<tspan x="${pos.x}" dy="-0.5em">${item.icon}</tspan><tspan x="${pos.x}" dy="1.2em">${item.task}</tspan>`;
+                    // 60분 이상이거나 활동명이 3자 이하로 짧으면 줄바꿈 표시
+                    if (duration >= 60 || (duration >= 30 && item.task.length <= 4)) {
+                        textNode.style.fontSize = "10px";
+                        // tspan의 x좌표를 부모 text의 x좌표와 동일하게 맞춰야 중앙 정렬됩니다.
+                        textNode.innerHTML = `
+                            <tspan x="${pos.x}" dy="-0.6em">${item.icon}</tspan>
+                            <tspan x="${pos.x}" dy="1.2em">${item.task}</tspan>
+                        `;
                     } else {
+                        textNode.setAttribute("x", pos.x);
+                        textNode.setAttribute("y", pos.y);
                         textNode.style.fontSize = "16px";
                         textNode.textContent = item.icon;
                     }
-                    
                     labels.appendChild(textNode);
                 }
 
-                // 하단 리스트
                 const div = document.createElement('div');
                 div.className = "flex items-center p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50";
                 div.innerHTML = `
@@ -194,30 +192,20 @@
                 `;
                 list.appendChild(div);
             });
-            localStorage.setItem('kidClock_emoji_v5', JSON.stringify(schedules));
+            localStorage.setItem('kidClock_v6', JSON.stringify(schedules));
         }
 
         function addSchedule() {
             const task = document.getElementById('taskName').value.trim();
             if (!task) return;
-
             const sh = document.getElementById('startH').value;
             const sm = document.getElementById('startM').value;
             const eh = document.getElementById('endH').value;
             const em = document.getElementById('endM').value;
-
-            const startTotal = parseInt(sh) * 60 + parseInt(sm);
+            let startTotal = parseInt(sh) * 60 + parseInt(sm);
             let endTotal = parseInt(eh) * 60 + parseInt(em);
-
             if (endTotal <= startTotal) endTotal += 1440; 
-            if (endTotal - startTotal > 1440) return alert("24시간을 넘길 수 없습니다!");
-
-            schedules.push({ 
-                sh, sm, eh, em, startTotal, endTotal,
-                task, icon: selectedIcon, 
-                color: colorPalette[schedules.length % colorPalette.length] 
-            });
-
+            schedules.push({ sh, sm, eh, em, startTotal, endTotal, task, icon: selectedIcon, color: colorPalette[schedules.length % colorPalette.length] });
             document.getElementById('taskName').value = '';
             render();
         }
