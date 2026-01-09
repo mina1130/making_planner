@@ -9,6 +9,7 @@
     <style>
         body { font-family: "Pretendard", sans-serif; background-color: #f8fafc; min-height: 100vh; }
         .clock-shadow { box-shadow: 0 10px 40px rgba(0,0,0,0.06), inset 0 0 0 10px #ffffff; }
+        /* dominant-baseline: middle; 은 한 줄일 때 기준선을 중앙에 둡니다. */
         .slice-label { pointer-events: none; text-anchor: middle; dominant-baseline: middle; font-weight: 700; }
         select, input { border: 2px solid #f1f5f9; border-radius: 12px !important; }
         .emoji-btn { font-size: 20px; transition: all 0.2s; background: white; border: 2px solid #f1f5f9; }
@@ -39,96 +40,4 @@
 
         <div class="bg-white rounded-3xl p-6 mb-6 shadow-sm space-y-4">
             <div>
-                <label class="text-[11px] font-bold text-slate-400 ml-1 mb-2 block">아이콘 선택</label>
-                <div class="grid grid-cols-6 gap-2" id="emojiGrid"></div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                    <label class="ml-1 text-[10px] font-bold text-slate-400">시작</label>
-                    <div class="flex gap-1">
-                        <select id="startH" class="w-full p-2 bg-slate-50 outline-none text-sm"></select>
-                        <select id="startM" class="w-full p-2 bg-slate-50 outline-none text-sm"></select>
-                    </div>
-                </div>
-                <div class="space-y-1">
-                    <label class="ml-1 text-[10px] font-bold text-slate-400">종료</label>
-                    <div class="flex gap-1">
-                        <select id="endH" class="w-full p-2 bg-slate-50 outline-none text-sm"></select>
-                        <select id="endM" class="w-full p-2 bg-slate-50 outline-none text-sm"></select>
-                    </div>
-                </div>
-            </div>
-            
-            <input type="text" id="taskName" placeholder="활동 이름 입력" 
-                class="w-full p-3.5 bg-slate-50 text-base font-bold outline-none focus:bg-white focus:border-blue-400 transition-all">
-            
-            <button onclick="addSchedule()" class="w-full bg-blue-600 text-white py-3.5 rounded-xl text-lg font-bold shadow-blue-100 shadow-xl active:scale-95 transition-all">계획 추가하기</button>
-        </div>
-
-        <div id="scheduleList" class="space-y-2"></div>
-    </div>
-
-    <script>
-        const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
-        let selectedIcon = "🏫";
-        const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
-        let schedules = JSON.parse(localStorage.getItem('kidClock_final_v1') || '[]');
-
-        function init() {
-            setupSelects();
-            createEmojiGrid();
-            render();
-        }
-
-        function createEmojiGrid() {
-            const grid = document.getElementById('emojiGrid');
-            emojis.forEach(emoji => {
-                const btn = document.createElement('button');
-                btn.className = `emoji-btn w-full aspect-square flex items-center justify-center rounded-lg ${emoji === selectedIcon ? 'selected' : ''}`;
-                btn.textContent = emoji;
-                btn.onclick = () => {
-                    selectedIcon = emoji;
-                    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                };
-                grid.appendChild(btn);
-            });
-        }
-
-        function setupSelects() {
-            const sh = document.getElementById('startH'), eh = document.getElementById('endH');
-            const sm = document.getElementById('startM'), em = document.getElementById('endM');
-            for(let i=0; i<24; i++) {
-                const opt = `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
-                sh.innerHTML += opt; eh.innerHTML += opt;
-            }
-            for(let i=0; i<60; i+=10) {
-                const opt = `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
-                sm.innerHTML += opt; em.innerHTML += opt;
-            }
-            eh.value = "1";
-        }
-
-        function polarToCartesian(cx, cy, r, angleDeg) {
-            const rad = (angleDeg * Math.PI) / 180.0;
-            return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-        }
-
-        function describeArc(x, y, radius, startAngle, endAngle) {
-            const start = polarToCartesian(x, y, radius, endAngle);
-            const end = polarToCartesian(x, y, radius, startAngle);
-            const diff = endAngle - startAngle;
-            const largeArc = diff <= 180 ? "0" : "1";
-            return ["M", start.x, start.y, "A", radius, radius, 0, largeArc, 0, end.x, end.y, "L", x, y, "Z"].join(" ");
-        }
-
-        function render() {
-            const group = document.getElementById('slicesGroup');
-            const labels = document.getElementById('labelsGroup');
-            const list = document.getElementById('scheduleList');
-            group.innerHTML = ''; labels.innerHTML = ''; list.innerHTML = '';
-
-            schedules.sort((a,b) => a.startTotal - b.startTotal).forEach((item, index) => {
-                const startDeg = item.startTotal * 0.25;
-                const endDeg = item.endTotal * 0.
+                <label class="text-[11px] font-bold text-slate-400 ml-1 mb-2
