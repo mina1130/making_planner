@@ -9,7 +9,7 @@
     <style>
         body { font-family: "Pretendard", sans-serif; background-color: #f8fafc; min-height: 100vh; }
         .clock-shadow { box-shadow: 0 10px 40px rgba(0,0,0,0.06), inset 0 0 0 10px #ffffff; }
-        .slice-label { pointer-events: none; text-anchor: middle; dominant-baseline: central; font-weight: 700; }
+        .slice-label { pointer-events: none; text-anchor: middle; dominant-baseline: middle; font-weight: 700; }
         select, input { border: 2px solid #f1f5f9; border-radius: 12px !important; }
         .emoji-btn { font-size: 20px; transition: all 0.2s; background: white; border: 2px solid #f1f5f9; }
         .emoji-btn.selected { background-color: #eff6ff; border-color: #3b82f6; transform: translateY(-2px); }
@@ -73,7 +73,7 @@
         const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
         let selectedIcon = "🏫";
         const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
-        let schedules = JSON.parse(localStorage.getItem('kidClock_emoji_v5') || '[]');
+        let schedules = JSON.parse(localStorage.getItem('kidClock_final_v1') || '[]');
 
         function init() {
             setupSelects();
@@ -135,7 +135,6 @@
                 const midDeg = (startDeg + endDeg) / 2;
                 const duration = item.endTotal - item.startTotal;
 
-                // 시계 조각
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 path.setAttribute("d", describeArc(150, 150, 145, startDeg, endDeg));
                 path.setAttribute("fill", item.color);
@@ -143,43 +142,34 @@
                 path.setAttribute("stroke-width", "1.5");
                 group.appendChild(path);
 
-                // 텍스트 및 이모티콘 (15분 이상일 때만)
-                if (duration >= 30) {
+                if (duration >= 15) {
                     const radius = 95; 
                     const pos = polarToCartesian(150, 150, radius, midDeg);
                     const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                    textNode.setAttribute("x", pos.x);
-                    textNode.setAttribute("y", pos.y);
-                    textNode.setAttribute("class", "slice-label text-slate-800");
                     
-                    // 각도에 따른 가독성 보정 (글자가 뒤집히지 않게)
                     let rotation = midDeg + 90;
                     if (midDeg > 90 && midDeg < 270) rotation += 180;
-                    textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
-
-                    // [핵심 수정 부분] tspan을 이용한 줄바꿈 처리
-                    // dy 값을 조절하여 위아래 간격을 만듭니다.
-                    textNode.innerHTML = `
-                        <tspan x="${pos.x}" dy="-0.5em" style="font-size: 14px;">${item.icon}</tspan>
-                        <tspan x="${pos.x}" dy="1.4em" style="font-size: 10px;">${item.task}</tspan>
-                    `;
-
-                    // [수정 포인트] 활동명이 짧거나 칸이 넓으면 이름까지 표시
-                    // 기준: 글자 수 대비 지속 시간(분)이 충분한지 계산
-                    const canShowText = duration >= (item.task.length * 15 + 30);
                     
+                    textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
+                    textNode.setAttribute("class", "slice-label text-slate-800");
+
+                    // 텍스트가 너비를 넘지 않을 때만 이름 표시 (너비 체크 기준 완화)
+                    const canShowText = duration >= (item.task.length * 8 + 20);
+
                     if (canShowText) {
-                        textNode.style.fontSize = "10px";
-                        textNode.textContent = `${item.icon} ${item.task}`;
+                        textNode.innerHTML = `
+                            <tspan x="${pos.x}" dy="-0.5em" style="font-size: 14px;">${item.icon}</tspan>
+                            <tspan x="${pos.x}" dy="1.4em" style="font-size: 9px; font-weight: 800;">${item.task}</tspan>
+                        `;
                     } else {
-                        textNode.style.fontSize = "14px";
+                        textNode.setAttribute("x", pos.x);
+                        textNode.setAttribute("y", pos.y);
+                        textNode.style.fontSize = "16px";
                         textNode.textContent = item.icon;
                     }
-                    
                     labels.appendChild(textNode);
                 }
 
-                // 하단 리스트
                 const div = document.createElement('div');
                 div.className = "flex items-center p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50";
                 div.innerHTML = `
@@ -196,30 +186,20 @@
                 `;
                 list.appendChild(div);
             });
-            localStorage.setItem('kidClock_emoji_v4', JSON.stringify(schedules));
+            localStorage.setItem('kidClock_final_v1', JSON.stringify(schedules));
         }
 
         function addSchedule() {
             const task = document.getElementById('taskName').value.trim();
             if (!task) return;
-
             const sh = document.getElementById('startH').value;
             const sm = document.getElementById('startM').value;
             const eh = document.getElementById('endH').value;
             const em = document.getElementById('endM').value;
-
-            const startTotal = parseInt(sh) * 60 + parseInt(sm);
+            let startTotal = parseInt(sh) * 60 + parseInt(sm);
             let endTotal = parseInt(eh) * 60 + parseInt(em);
-
             if (endTotal <= startTotal) endTotal += 1440; 
-            if (endTotal - startTotal > 1440) return alert("24시간을 넘길 수 없습니다!");
-
-            schedules.push({ 
-                sh, sm, eh, em, startTotal, endTotal,
-                task, icon: selectedIcon, 
-                color: colorPalette[schedules.length % colorPalette.length] 
-            });
-
+            schedules.push({ sh, sm, eh, em, startTotal, endTotal, task, icon: selectedIcon, color: colorPalette[schedules.length % colorPalette.length] });
             document.getElementById('taskName').value = '';
             render();
         }
@@ -229,5 +209,3 @@
     </script>
 </body>
 </html>
-
-
