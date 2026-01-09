@@ -9,14 +9,7 @@
     <style>
         body { font-family: "Pretendard", sans-serif; background-color: #f8fafc; min-height: 100vh; }
         .clock-shadow { box-shadow: 0 10px 40px rgba(0,0,0,0.06), inset 0 0 0 10px #ffffff; }
-        /* 글자가 시계 바깥으로 나가지 않게 조절 */
-        .slice-label { 
-            pointer-events: none; 
-            text-anchor: middle; 
-            dominant-baseline: central; 
-            font-weight: 800;
-            fill: #334155; /* 진한 슬레이트 색상 */
-        }
+        .slice-label { pointer-events: none; text-anchor: middle; dominant-baseline: central; font-weight: 700; }
         select, input { border: 2px solid #f1f5f9; border-radius: 12px !important; }
         .emoji-btn { font-size: 20px; transition: all 0.2s; background: white; border: 2px solid #f1f5f9; }
         .emoji-btn.selected { background-color: #eff6ff; border-color: #3b82f6; transform: translateY(-2px); }
@@ -80,7 +73,7 @@
         const emojis = ["😴", "🍚", "🏫", "📚", "🔠", "🥋", "🎮", "🎹", "🛁", "🍭", "📖", "✏️"];
         let selectedIcon = "🏫";
         const colorPalette = ['#FFDADA', '#DFFFD6', '#D6E4FF', '#FFF4D6', '#E4D6FF', '#D6FFF9', '#FFD6F5', '#F1F5F9'];
-        let schedules = JSON.parse(localStorage.getItem('kidClock_emoji_v5') || '[]');
+        let schedules = JSON.parse(localStorage.getItem('kidClock_emoji_v4') || '[]');
 
         function init() {
             setupSelects();
@@ -150,27 +143,29 @@
                 path.setAttribute("stroke-width", "1.5");
                 group.appendChild(path);
 
-                // 텍스트 표시 로직 보완
-                if (duration >= 20) { // 최소 20분 이상일 때만 표시
-                    const radius = 100; // 중심에서 조금 더 안쪽으로 배치
+                // 텍스트 및 이모티콘 (15분 이상일 때만)
+                if (duration >= 15) {
+                    const radius = 105; 
                     const pos = polarToCartesian(150, 150, radius, midDeg);
                     const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     textNode.setAttribute("x", pos.x);
                     textNode.setAttribute("y", pos.y);
-                    textNode.setAttribute("class", "slice-label");
+                    textNode.setAttribute("class", "slice-label text-slate-800");
                     
-                    // 각도 보정 (항상 읽기 편하게)
+                    // 각도에 따른 가독성 보정 (글자가 뒤집히지 않게)
                     let rotation = midDeg + 90;
                     if (midDeg > 90 && midDeg < 270) rotation += 180;
                     textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
 
-                    // [수정] 글자 표시 조건 완화
-                    // 60분 이상이거나 활동명이 아주 짧으면 이름 표시
-                    if (duration >= 60 || (duration >= 30 && item.task.length <= 3)) {
-                        textNode.style.fontSize = "11px";
-                        textNode.innerHTML = `<tspan x="${pos.x}" dy="-0.5em">${item.icon}</tspan><tspan x="${pos.x}" dy="1.2em">${item.task}</tspan>`;
+                    // [수정 포인트] 활동명이 짧거나 칸이 넓으면 이름까지 표시
+                    // 기준: 글자 수 대비 지속 시간(분)이 충분한지 계산
+                    const canShowText = duration >= (item.task.length * 15 + 30);
+                    
+                    if (canShowText) {
+                        textNode.style.fontSize = "10px";
+                        textNode.textContent = `${item.icon} ${item.task}`;
                     } else {
-                        textNode.style.fontSize = "16px";
+                        textNode.style.fontSize = "14px";
                         textNode.textContent = item.icon;
                     }
                     
@@ -194,7 +189,7 @@
                 `;
                 list.appendChild(div);
             });
-            localStorage.setItem('kidClock_emoji_v5', JSON.stringify(schedules));
+            localStorage.setItem('kidClock_emoji_v4', JSON.stringify(schedules));
         }
 
         function addSchedule() {
