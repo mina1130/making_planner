@@ -144,8 +144,8 @@
                 group.appendChild(path);
 
                 // 텍스트 및 이모티콘 (15분 이상일 때만)
-                if (duration >= 15) {
-                    const radius = 105; 
+                if (duration >= 30) {
+                    const radius = 95; 
                     const pos = polarToCartesian(150, 150, radius, midDeg);
                     const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     textNode.setAttribute("x", pos.x);
@@ -156,6 +156,13 @@
                     let rotation = midDeg + 90;
                     if (midDeg > 90 && midDeg < 270) rotation += 180;
                     textNode.setAttribute("transform", `rotate(${rotation}, ${pos.x}, ${pos.y})`);
+
+                    // [핵심 수정 부분] tspan을 이용한 줄바꿈 처리
+                    // dy 값을 조절하여 위아래 간격을 만듭니다.
+                    textNode.innerHTML = `
+                        <tspan x="${pos.x}" dy="-0.5em" style="font-size: 14px;">${item.icon}</tspan>
+                        <tspan x="${pos.x}" dy="1.4em" style="font-size: 10px;">${item.task}</tspan>
+                    `;
 
                     // [수정 포인트] 활동명이 짧거나 칸이 넓으면 이름까지 표시
                     // 기준: 글자 수 대비 지속 시간(분)이 충분한지 계산
@@ -222,3 +229,4 @@
     </script>
 </body>
 </html>
+
