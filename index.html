@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>초1 방학 생활 계획표 만들기</title>
+    <title>나만의 생활 계획표 만들기</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -21,11 +21,9 @@
         .time-slice {
             transition: all 0.3s ease;
         }
-        /* 폰트 스타일 강제 적용 */
         input, button, text, select {
             font-family: 'Gaegu', cursive;
         }
-        /* 원형 차트 컨테이너 가변 크기 */
         .canvas-container {
             width: 100%;
             max-width: 500px;
@@ -38,7 +36,7 @@
     <div class="max-w-5xl mx-auto">
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 no-print gap-4">
-            <h1 class="text-3xl md:text-4xl font-bold text-yellow-800 text-center md:text-left">🎈 초1 방학 생활 계획표</h1>
+            <h1 class="text-3xl md:text-4xl font-bold text-yellow-800 text-center md:text-left">📅 나만의 생활 계획표</h1>
             <button onclick="window.print()" class="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center justify-center gap-2 transition-all text-xl">
                 <span>인쇄하기 (A4)</span>
             </button>
@@ -48,14 +46,15 @@
             <!-- Settings Panel (Left) -->
             <div class="w-full lg:w-1/3 space-y-6 no-print">
                 <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border-4 border-yellow-200">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-700">✏️ 계획 짜기</h2>
+                    <h2 class="text-2xl font-bold mb-4 text-gray-700">✏️ 계획 설정</h2>
                     
                     <div class="mb-4">
-                        <label class="block font-bold text-gray-600 mb-1 text-xl">어린이 이름</label>
-                        <input type="text" id="studentName" oninput="updateView()" placeholder="이름을 적어주세요" class="w-full p-2 border-2 rounded-lg outline-none focus:border-yellow-400 text-2xl">
+                        <label class="block font-bold text-gray-600 mb-1 text-xl">이름 또는 제목</label>
+                        <input type="text" id="studentName" oninput="updateView()" placeholder="이름을 입력하세요" class="w-full p-2 border-2 rounded-lg outline-none focus:border-yellow-400 text-2xl">
                     </div>
 
                     <div class="bg-yellow-50 p-4 rounded-xl border-2 border-yellow-100 mb-4">
+                        <input type="hidden" id="editId" value="">
                         <div class="grid grid-cols-2 gap-2 mb-2">
                             <div>
                                 <label class="text-sm text-gray-500 block">시작</label>
@@ -67,14 +66,17 @@
                             </div>
                         </div>
                         <label class="text-sm text-gray-500 block">활동 내용</label>
-                        <input type="text" id="activityName" placeholder="예: 독서, 줄넘기" class="w-full p-2 border rounded mb-2 text-xl">
+                        <input type="text" id="activityName" placeholder="할 일을 입력하세요" class="w-full p-2 border rounded mb-2 text-xl">
                         
                         <label class="text-sm text-gray-500 block mb-1">색상 선택</label>
                         <div id="colorPicker" class="flex gap-2 mb-4 flex-wrap">
                             <!-- Colors injected by JS -->
                         </div>
-                        <button onclick="addActivity()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-3 rounded-lg shadow-sm text-2xl transition-colors">
+                        <button id="addBtn" onclick="addActivity()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-3 rounded-lg shadow-sm text-2xl transition-colors">
                             추가하기
+                        </button>
+                        <button id="cancelEditBtn" onclick="resetForm()" class="hidden w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold py-2 rounded-lg text-xl transition-colors">
+                            취소
                         </button>
                     </div>
 
@@ -89,10 +91,10 @@
                 <div class="flex flex-col items-center">
                     <div class="text-center mb-6 w-full">
                         <div class="inline-block bg-yellow-100 px-6 py-2 rounded-full border-2 border-yellow-300 text-yellow-900 mb-4">
-                            <span class="text-2xl md:text-4xl font-bold">방학 생활 계획표</span>
+                            <span class="text-2xl md:text-4xl font-bold">생활 계획표</span>
                         </div>
                         <div class="flex justify-center md:justify-end w-full">
-                            <span id="displayName" class="text-2xl md:text-3xl font-bold border-b-2 border-gray-400 px-4 pb-1 min-w-[150px]">1학년 (이름)</span>
+                            <span id="displayName" class="text-2xl md:text-3xl font-bold border-b-2 border-gray-400 px-4 pb-1 min-w-[150px]">(이름)의 하루</span>
                         </div>
                     </div>
 
@@ -104,8 +106,8 @@
                             <g id="labelsGroup"></g>
                             <!-- Center circle -->
                             <circle cx="50" cy="50" r="12" fill="white" />
-                            <text x="50" y="49" text-anchor="middle" font-size="3" font-weight="bold" fill="#bbb">알찬 방학</text>
-                            <text x="50" y="53" text-anchor="middle" font-size="3" font-weight="bold" fill="#bbb">신나는 하루</text>
+                            <text x="50" y="49" text-anchor="middle" font-size="3" font-weight="bold" fill="#bbb">오늘 하루도</text>
+                            <text x="50" y="53" text-anchor="middle" font-size="3" font-weight="bold" fill="#bbb">화이팅!</text>
                             <!-- Hour markers -->
                             <g id="markersGroup"></g>
                         </svg>
@@ -113,15 +115,15 @@
 
                     <!-- Goals Section -->
                     <div class="w-full mt-8 p-5 md:p-6 border-4 border-yellow-100 rounded-3xl bg-yellow-50/30">
-                        <h3 class="text-2xl md:text-3xl font-bold text-yellow-800 mb-4">🤙 나의 방학 약속</h3>
+                        <h3 class="text-2xl md:text-3xl font-bold text-yellow-800 mb-4">✨ 오늘을 위한 다짐</h3>
                         <div class="space-y-4">
                             <div class="flex items-center gap-3">
                                 <span class="bg-yellow-400 text-white w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">1</span>
-                                <input type="text" placeholder="약속을 적어보세요" class="w-full bg-transparent border-b-2 border-dashed border-gray-300 outline-none text-xl md:text-2xl py-1 focus:border-yellow-400">
+                                <input type="text" placeholder="첫 번째 다짐을 적어보세요" class="w-full bg-transparent border-b-2 border-dashed border-gray-300 outline-none text-xl md:text-2xl py-1 focus:border-yellow-400">
                             </div>
                             <div class="flex items-center gap-3">
                                 <span class="bg-yellow-400 text-white w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xl">2</span>
-                                <input type="text" placeholder="약속을 적어보세요" class="w-full bg-transparent border-b-2 border-dashed border-gray-300 outline-none text-xl md:text-2xl py-1 focus:border-yellow-400">
+                                <input type="text" placeholder="두 번째 다짐을 적어보세요" class="w-full bg-transparent border-b-2 border-dashed border-gray-300 outline-none text-xl md:text-2xl py-1 focus:border-yellow-400">
                             </div>
                         </div>
                     </div>
@@ -134,9 +136,9 @@
         const colors = ['#FEE2E2', '#FFEDD5', '#FEF3C7', '#DCFCE7', '#DBEAFE', '#E0E7FF', '#F3E8FF', '#FCE7F3'];
         let selectedColor = colors[3];
         let activities = [
-            { id: 1, name: '꿈나라 여행', start: '22:00', end: '07:30', color: '#E0E7FF' },
-            { id: 2, name: '아침 식사', start: '07:30', end: '09:00', color: '#FFEDD5' },
-            { id: 3, name: '자유 시간', start: '09:00', end: '13:00', color: '#DCFCE7' }
+            { id: 1, name: '수면', start: '23:00', end: '07:00', color: '#E0E7FF' },
+            { id: 2, name: '준비 & 식사', start: '07:00', end: '09:00', color: '#FFEDD5' },
+            { id: 3, name: '집중 시간', start: '09:00', end: '12:00', color: '#DCFCE7' }
         ];
 
         function init() {
@@ -168,14 +170,45 @@
             const name = document.getElementById('activityName').value;
             const start = document.getElementById('startTime').value;
             const end = document.getElementById('endTime').value;
-            if (!name) {
-                alert('활동 내용을 입력해주세요!');
-                return;
-            }
+            const editId = document.getElementById('editId').value;
+
+            if (!name) return;
             
-            activities.push({ id: Date.now(), name, start, end, color: selectedColor });
-            document.getElementById('activityName').value = '';
+            if (editId) {
+                const index = activities.findIndex(a => a.id == editId);
+                if (index !== -1) {
+                    activities[index] = { ...activities[index], name, start, end, color: selectedColor };
+                }
+            } else {
+                activities.push({ id: Date.now(), name, start, end, color: selectedColor });
+            }
+
+            document.getElementById('startTime').value = end;
+            resetForm();
             updateView();
+        }
+
+        function editActivity(id) {
+            const item = activities.find(a => a.id == id);
+            if (!item) return;
+
+            document.getElementById('editId').value = item.id;
+            document.getElementById('activityName').value = item.name;
+            document.getElementById('startTime').value = item.start;
+            document.getElementById('endTime').value = item.end;
+            selectedColor = item.color;
+            
+            document.getElementById('addBtn').innerText = '저장하기';
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            renderColorPicker();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = '';
+            document.getElementById('activityName').value = '';
+            document.getElementById('addBtn').innerText = '추가하기';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
         }
 
         function removeActivity(id) {
@@ -185,7 +218,7 @@
 
         function updateView() {
             const nameInput = document.getElementById('studentName').value;
-            document.getElementById('displayName').innerText = `1학년 ${nameInput || '(이름)'}`;
+            document.getElementById('displayName').innerText = nameInput ? `${nameInput}의 하루` : '(이름)의 하루';
             
             renderSlices();
             renderList();
@@ -221,10 +254,10 @@
                 path.classList.add("time-slice");
                 slicesGroup.appendChild(path);
 
-                // Label positioning
                 const midAngle = (startAngle + endAngle) / 2;
-                const lx = 50 + 35 * Math.cos(Math.PI * midAngle / 180);
-                const ly = 50 + 35 * Math.sin(Math.PI * midAngle / 180);
+                const dist = 35;
+                const lx = 50 + dist * Math.cos(Math.PI * midAngle / 180);
+                const ly = 50 + dist * Math.sin(Math.PI * midAngle / 180);
                 
                 const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
                 text.setAttribute("x", lx);
@@ -248,7 +281,10 @@
                         <div class="w-4 h-4 rounded-full border border-gray-200" style="background-color: ${item.color}"></div>
                         <span class="text-xl font-bold text-gray-700">${item.start} - ${item.name}</span>
                     </div>
-                    <button onclick="removeActivity(${item.id})" class="text-red-400 hover:text-red-600 font-bold text-xl px-2">✕</button>
+                    <div class="flex gap-2">
+                        <button onclick="editActivity(${item.id})" class="text-blue-400 hover:text-blue-600 font-bold text-xl px-2">✏️</button>
+                        <button onclick="removeActivity(${item.id})" class="text-red-400 hover:text-red-600 font-bold text-xl px-2">✕</button>
+                    </div>
                 </div>
             `).join('');
         }
